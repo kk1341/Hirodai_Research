@@ -1,11 +1,13 @@
 import numpy as np
 import pandas as pd
 import os
+from tqdm import tqdm  # プログレスバー用
 
 # --- 1. Ledoit-Wolf Shrinkage Estimation Function ---
 
 
 def linear_shrinkage_identity(X, assume_zero_mean=False):
+
     """
     Ledoit-Wolf線形収縮推定器（ターゲット行列はスケーリングされた単位行列 I）。
 
@@ -224,7 +226,7 @@ def run_backtest(retx_data, train_duration, retx_cols):
     print(f"総ステップ数: {num_test_steps} 回のテストを実行")
 
     # i: 訓練期間の終了インデックス、つまりテストするリターンの前日
-    for i in range(T_total - train_duration):
+    for i in tqdm(range(T_total - train_duration), desc="Backtest Progress"):
 
         # 1. 訓練期間の抽出 (ロール・オーバー)
         train_retx = retx_data[i : i + train_duration, :]
