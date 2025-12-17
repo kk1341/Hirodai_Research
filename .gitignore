@@ -25,6 +25,7 @@ data/
 *.csv
 *.xls
 *.xlsx
+result.txt
 
 # Temporary files
 tmp/
