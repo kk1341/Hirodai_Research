@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 from tqdm import tqdm  # プログレスバー用
+import scipy
 
 # --- 1. Ledoit-Wolf Shrinkage Estimation Function ---
 
@@ -293,7 +294,7 @@ def run_backtest(retx_data, train_duration, retx_cols):
 
 if __name__ == "__main__":
     # 0. 補間方法の設定 ('zero', 'linear', 'spline', 'ffill')
-    INTERPOLATION_METHOD = "spline"
+    INTERPOLATION_METHOD = "linear"
 
     # 1. パスの設定（元のコードの値をそのまま使用）
     # これらのパスは実行環境に合わせて変更が必要です
