@@ -42,14 +42,11 @@ def linear_shrinkage_identity(X, assume_zero_mean=False):
     delta2_hat = np.sum(S_minus * S_minus)
 
     # beta^2 の推定: E|| S − Sigma ||^2_F
-    beta2_hat = 0.0
-    # X の各行 (x_t) に対してループを回す
-    for xt in X:
-        xt = xt.reshape(-1, 1)  # 列ベクトルに変換
-        outer = xt @ xt.T
-        diff = outer - S
-        beta2_hat += np.sum(diff * diff)
-    beta2_hat /= T**2
+    # ベクトル化による高速化 (ループ処理の排除)
+    # X_outer: (T, N, N) - 各時点 t における x_t @ x_t.T
+    X_outer = X[:, :, np.newaxis] * X[:, np.newaxis, :]
+    diff = X_outer - S
+    beta2_hat = np.sum(diff**2) / (T**2)
 
     # Shrinkage Intensity c_hat の計算
     if delta2_hat <= 0:
@@ -75,15 +72,13 @@ def calculate_mvp_weights(cov_matrix):
     N = cov_matrix.shape[0]
     ones = np.ones((N, 1))
 
-    # 逆行列の計算 (エラーハンドリング付き)
+    # 逆行列を用いた重み計算 w = A^-1 * 1 / (1^T * A^-1 * 1)
+    # np.linalg.solve を使用して高速化・安定化 (A * w_tmp = 1 を解く)
     try:
-        inv_cov_matrix = np.linalg.inv(cov_matrix)
+        w = np.linalg.solve(cov_matrix, ones)
     except np.linalg.LinAlgError:
         # 特異行列などで逆行列が計算できない場合のエラーを送出
         raise
-
-    # 重み w = A^-1 * 1 / (1^T * A^-1 * 1)
-    w = np.matmul(inv_cov_matrix, ones)
 
     # 正規化 (和が1になるように)
     w = w / w.sum()
@@ -268,7 +263,7 @@ def run_backtest(retx_data, train_duration, retx_cols):
         if i == 0:
             print(f"  初回テスト日インデックス: {i + train_duration}")
             print(f"  標本重み (w_S) - 最初の5つ:\n{w_S[:5]}")
-            print(f"  収縮重み (w_Sh) - 最初の5つ:\n{w_Sh[:5]}")
+            print(f"  縮小重み (w_Sh) - 最初の5つ:\n{w_Sh[:5]}")
 
     print("\n--- シャープ・レシオの評価 ---")
 
@@ -298,7 +293,7 @@ def run_backtest(retx_data, train_duration, retx_cols):
 
 if __name__ == "__main__":
     # 0. 補間方法の設定 ('zero', 'linear', 'spline', 'ffill')
-    INTERPOLATION_METHOD = "zero"
+    INTERPOLATION_METHOD = "spline"
 
     # 1. パスの設定（元のコードの値をそのまま使用）
     # これらのパスは実行環境に合わせて変更が必要です
