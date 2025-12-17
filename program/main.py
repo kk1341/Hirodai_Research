@@ -298,8 +298,6 @@ if __name__ == "__main__":
     # 1. パスの設定（元のコードの値をそのまま使用）
     # これらのパスは実行環境に合わせて変更が必要です
     input_path = "C:/Users/scarl/Documents/Research/data/input/"
-    output_path = "C:/Users/scarl/Documents/Research/data/output/"
-
 
     # 2. 処理対象のファイル名リスト (自動取得)
     stock_files = [f for f in os.listdir(input_path) if f.endswith(".csv")]
