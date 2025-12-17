@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.mypy_cache/
+.venv/
+.research/
+env/
+venv/
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.pdf
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+# Project Data
+data/
+*.csv
+*.xls
+*.xlsx
+
+# Temporary files
+tmp/
+*.tmp
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
