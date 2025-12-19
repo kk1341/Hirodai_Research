@@ -5,7 +5,7 @@ from tqdm import tqdm
 import method
 from portfolio_utils import calculate_mvp_weights, calculate_sharpe_ratio
 
-def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output"):
+def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output", pca_rank=3):
     """
     ロール・オーバー・ウィンドウによるバックテストを実行し、シャープ・レシオを比較する。
     結果はCSVファイルに出力する。
@@ -51,15 +51,15 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output"
         except:
             estimators["MarketFactor"] = None
 
-        # (3) PCA Factor (K=3と仮定)
+        # (3) PCA Factor
         try:
-            estimators["PCA"] = method.pca_factor_covariance(train_retx, K=3)
+            estimators["PCA"] = method.pca_factor_covariance(train_retx, K=pca_rank)
         except:
             estimators["PCA"] = None
 
-        # (4) POET (K=3と仮定)
+        # (4) POET
         try:
-            estimators["POET"] = method.poet_covariance(train_retx, K=3)
+            estimators["POET"] = method.poet_covariance(train_retx, K=pca_rank)
         except:
             estimators["POET"] = None
             
