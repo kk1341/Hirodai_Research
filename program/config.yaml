@@ -5,7 +5,12 @@ paths:
 
 backtest:
   start_date: "1995-03-01"
-  end_date: "1996-03-01"
+  end_date: "2023-12-29"
   train_duration: 21
-  interpolation_method: "linear"
+  interpolation_method: "zero"
   pca_rank: 3
+
+experiment:
+  n_values: [30, 50, 100, 200, 500]
+  num_simulations: 10
+  random_seed: 42
