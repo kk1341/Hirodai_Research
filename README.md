@@ -6,23 +6,25 @@
 
 ```
 Research/
-├── data/               # データ
-│   ├── input/          # 入力
-│   └── output/         # 出力
-├── program/            # ソースコード
-│   ├── config.yaml     # 設定ファイル (パス、期間、手法など)
-│   ├── main.py         # メインスクリプト
-│   ├── method.py       # 実装 (Shrinkage, POET, PCA など)
+├── config/             # 設定ファイル
+│   └── config.yaml     # 実験パラメータ、パス設定
+├── data/               # データファイル
+│   ├── input/          # 株価データのCSVファイル
+│   └── output/         # バックテスト結果とプロット
+├── src/                # ソースコード
+│   ├── config.py       # 設定読み込みモジュール
+│   ├── main.py         # バックテスト実行のメインスクリプト
+│   ├── method.py       # アルゴリズム実装
 │   ├── backtest_engine.py # バックテストのロジック
 │   ├── data_handler.py    # データ読み込みと前処理
-│   └── tests/          # テスト
+│   └── tests/          # ユニットテスト
 │       └── test_method.py
-├── Thesis/             # 論文
-├── requirements.txt    
-└── README.md            
+├── Thesis/             # 論文 (LaTeX)
+├── requirements.txt    # Python 依存ライブラリ一覧
+└── README.md           # 本ファイル（説明書）
 ```
 
-## セットアップと使用方法
+### セットアップと使用方法
 
 1. **ライブラリのインストール:**
    ```bash
@@ -31,11 +33,10 @@ Research/
 
 2. **テストの実行:**
    ```bash
-   python -m unittest discover program/tests
+   python -m unittest discover src/tests
    ```
 
 3. **バックテストの実行:**
    ```bash
-   cd program
-   python main.py
+   python src/main.py
    ```

@@ -1,15 +1,18 @@
 import yaml
 import os
 
-def load_config(config_path="config.yaml"):
+def load_config(config_path="../config/config.yaml"):
     """
     Load configuration from a YAML file.
+    Default path is relative to this file: ../config/config.yaml
     """
-    # Get the directory where this script is located
+    # Get the directory where this script is located (src/)
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
     # Construct absolute path to config file
+    # Default: src/../config/config.yaml -> Research/config/config.yaml
     full_config_path = os.path.join(base_dir, config_path)
+    full_config_path = os.path.normpath(full_config_path)
     
     if not os.path.exists(full_config_path):
         raise FileNotFoundError(f"Configuration file not found at: {full_config_path}")
