@@ -5,10 +5,21 @@ from tqdm import tqdm
 import method
 from portfolio_utils import calculate_mvp_weights, calculate_sharpe_ratio
 
-def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output", pca_rank=3):
+def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank=3, silent=False):
     """
     ロール・オーバー・ウィンドウによるバックテストを実行し、シャープ・レシオを比較する。
-    結果はCSVファイルに出力する。
+    
+    Parameters
+    ----------
+    silent : bool
+        Trueの場合、進捗バーや詳細なprint出力を抑制する。
+    output_dir : str or None
+        Noneの場合、ファイル保存を行わない（実験用）。
+    
+    Returns
+    -------
+    performance_summary : pd.DataFrame
+        各手法のパフォーマンス指標を含むDataFrame。
     """
     T_total, N = retx_data.shape
     num_test_steps = T_total - train_duration
@@ -23,11 +34,16 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output"
         "NonlinearShrinkage": [],
     }
 
-    print(f"\n--- バックテスト実行 (T_train={train_duration} / N={N}) ---")
-    print(f"総ステップ数: {num_test_steps} 回のテストを実行")
-    print("比較対象: Sample, MarketFactor, PCA, POET, LinearShrinkage, NonlinearShrinkage")
+    if not silent:
+        print(f"\n--- バックテスト実行 (T_train={train_duration} / N={N}) ---")
+        print(f"総ステップ数: {num_test_steps} 回のテストを実行")
+        print("比較対象: Sample, MarketFactor, PCA, POET, LinearShrinkage, NonlinearShrinkage")
 
-    for i in tqdm(range(num_test_steps), desc="Backtest Progress"):
+    iterator = range(num_test_steps)
+    if not silent:
+        iterator = tqdm(iterator, desc="Backtest Progress")
+
+    for i in iterator:
         
         # 1. 訓練期間の抽出
         train_retx = retx_data[i : i + train_duration, :]
@@ -95,16 +111,19 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output"
             r_p = np.dot(test_return, w)
             returns_storage[name].append(r_p)
 
-    print("\n--- バックテスト完了。結果を集計中... ---")
+    if not silent:
+        print("\n--- バックテスト完了。結果を集計中... ---")
 
     # --- 結果の集計とCSV出力 ---
-    os.makedirs(output_dir, exist_ok=True)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     
-    # 1. リターン時系列の保存
-    df_returns = pd.DataFrame(returns_storage)
-    returns_csv_path = os.path.join(output_dir, "backtest_returns.csv")
-    df_returns.to_csv(returns_csv_path, index=False)
-    print(f"リターン時系列を保存しました: {returns_csv_path}")
+        # 1. リターン時系列の保存
+        df_returns = pd.DataFrame(returns_storage)
+        returns_csv_path = os.path.join(output_dir, "backtest_returns.csv")
+        df_returns.to_csv(returns_csv_path, index=False)
+        if not silent:
+            print(f"リターン時系列を保存しました: {returns_csv_path}")
 
     # 2. パフォーマンス指標の計算と保存
     performance_records = []
@@ -134,10 +153,15 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir="/data/output"
         })
 
     df_perf = pd.DataFrame(performance_records)
-    perf_csv_path = os.path.join(output_dir, "performance_summary.csv")
-    df_perf.to_csv(perf_csv_path, index=False)
-    print(f"パフォーマンス指標を保存しました: {perf_csv_path}")
 
-    print("\n--- 結果サマリー (Top 3 by Sharpe Ann) ---")
-    if not df_perf.empty:
-        print(df_perf.sort_values("Sharpe Ratio (Ann)", ascending=False).head(3).to_string(index=False))
+    if output_dir:
+        perf_csv_path = os.path.join(output_dir, "performance_summary.csv")
+        df_perf.to_csv(perf_csv_path, index=False)
+        if not silent:
+            print(f"パフォーマンス指標を保存しました: {perf_csv_path}")
+
+            print("\n--- 結果サマリー (Top 3 by Sharpe Ann) ---")
+            if not df_perf.empty:
+                print(df_perf.sort_values("Sharpe Ratio (Ann)", ascending=False).head(3).to_string(index=False))
+
+    return df_perf

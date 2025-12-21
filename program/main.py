@@ -1,5 +1,8 @@
 import os
 import sys
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 # 自作モジュールのインポート
 from data_handler import prepare_data
@@ -22,6 +25,13 @@ if __name__ == "__main__":
     train_duration = config["backtest"]["train_duration"]
     pca_rank = config["backtest"]["pca_rank"]
 
+    # 実験設定
+    n_values = config["experiment"]["n_values"]
+    num_sims = config["experiment"]["num_simulations"]
+    random_seed = config["experiment"]["random_seed"]
+
+    np.random.seed(random_seed)
+
     # 1. パスの設定
     input_path = config["paths"]["input_dir"]
     output_path = config["paths"]["output_dir"]
@@ -37,24 +47,79 @@ if __name__ == "__main__":
         print(f"エラー: 指定されたフォルダ '{input_path}' にCSVファイルが見つかりませんでした。")
         sys.exit(1)
         
-    print(f"フォルダ '{input_path}' から {len(stock_files)} 件のCSVファイルを検出しました。")
+    print(f"フォルダ '{input_path}' から {len(stock_files)} 件のCSVファイルを検出しました (universe)。")
 
-
-    # 4. データ準備とクレンジング
-    retx_data, retx_cols = prepare_data(
+    # 4. データ準備とクレンジング (ユニバース全体を読み込み)
+    print("ユニバースデータの読み込み中...")
+    universe_retx, universe_cols = prepare_data(
         input_path, stock_files, start_date, end_date, method=INTERPOLATION_METHOD
     )
+    
+    universe_size = universe_retx.shape[1]
+    print(f"データ準備完了: {universe_retx.shape} (T={universe_retx.shape[0]}, N_universe={universe_size})")
 
-    # 5. ロール・オーバー・テストの実行
-    if retx_data.shape[0] > train_duration and retx_data.shape[1] >= 2:
-        run_backtest(
-            retx_data, 
-            train_duration, 
-            retx_cols, 
-            output_dir=output_path,
-            pca_rank=pca_rank
-        )
+    # --- モンテカルロ・シミュレーション実験 ---
+    
+    experiment_results = []
+    
+    print(f"\n--- 実験開始: N={n_values}, Sims={num_sims} per N ---")
+
+    for n_count in n_values:
+        if n_count > universe_size:
+            print(f"Skip: N={n_count} > Universe({universe_size})")
+            continue
+            
+        print(f"\nRunning simulations for N = {n_count}...")
+        
+        for sim_i in tqdm(range(num_sims), desc=f"Sims (N={n_count})"):
+            # ランダムサンプリング (非復元抽出)
+            selected_indices = np.random.choice(universe_size, n_count, replace=False)
+            
+            # データのサブセット作成
+            sample_retx = universe_retx[:, selected_indices]
+            sample_cols = [universe_cols[i] for i in selected_indices]
+            
+            # バックテスト実行 (静音モード)
+            # 個別のファイル出力はしない (output_dir=None)
+            df_res = run_backtest(
+                sample_retx, 
+                train_duration, 
+                sample_cols, 
+                output_dir=None, 
+                pca_rank=pca_rank,
+                silent=True
+            )
+            
+            # 結果の収集 (Sim ID と N を付与)
+            if not df_res.empty:
+                df_res["N"] = n_count
+                df_res["SimID"] = sim_i
+                experiment_results.append(df_res)
+    
+    # --- 結果の集計と保存 ---
+    if experiment_results:
+        print("\n実験完了。結果を保存中...")
+        all_results_df = pd.concat(experiment_results, ignore_index=True)
+        
+        # 1. Raw Data (全シミュレーション結果)
+        raw_output_path = os.path.join(output_path, "experiment_results_raw.csv")
+        all_results_df.to_csv(raw_output_path, index=False)
+        print(f"全シミュレーション結果を保存: {raw_output_path}")
+        
+        # 2. Summary (Nごとの平均/標準偏差)
+        # N と Method でグループ化し、Sharpe Ratio (Ann) の平均と標準偏差を計算
+        summary_group = all_results_df.groupby(["N", "Method"])["Sharpe Ratio (Ann)"]
+        summary_df = summary_group.agg(["mean", "std", "count"]).reset_index()
+        summary_df.columns = ["N", "Method", "Mean Sharpe", "Std Sharpe", "Count"]
+        
+        summary_output_path = os.path.join(output_path, "experiment_results_summary.csv")
+        summary_df.to_csv(summary_output_path, index=False)
+        print(f"サマリー結果を保存: {summary_output_path}")
+        
+        print("\n--- Summary (N vs Mean Sharpe) ---")
+        # 見やすいようにピボットテーブルで表示
+        pivot_summary = summary_df.pivot(index="N", columns="Method", values="Mean Sharpe")
+        print(pivot_summary.to_string())
+        
     else:
-        print(
-            "\nエラー: 訓練期間または銘柄数が不十分なため、バックテストを実行できません。"
-        )
+        print("警告: シミュレーション結果が得られませんでした。")
