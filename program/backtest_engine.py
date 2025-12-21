@@ -125,7 +125,7 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
         if not silent:
             print(f"リターン時系列を保存しました: {returns_csv_path}")
 
-    # 2. パフォーマンス指標の計算
+    # 2. パフォーマンス指標の計算と保存
     performance_records = []
     
     for name, ret_list in returns_storage.items():
