@@ -47,7 +47,7 @@ if __name__ == "__main__":
         print(f"エラー: 指定されたフォルダ '{input_path}' にCSVファイルが見つかりませんでした。")
         sys.exit(1)
         
-    print(f"フォルダ '{input_path}' から {len(stock_files)} 件のCSVファイルを検出しました (Universe)。")
+    print(f"フォルダ '{input_path}' から {len(stock_files)} 件のCSVファイルを検出しました (universe)。")
 
     # 4. データ準備とクレンジング (ユニバース全体を読み込み)
     print("ユニバースデータの読み込み中...")
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     
     experiment_results = []
     
-    print(f"\n--- 実験開始: N={n_values}, Sims={num_sims}/N ---")
+    print(f"\n--- 実験開始: N={n_values}, Sims={num_sims} per N ---")
 
     for n_count in n_values:
         if n_count > universe_size:
