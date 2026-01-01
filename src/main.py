@@ -10,22 +10,23 @@ from data_handler import prepare_data
 from backtest_engine import run_backtest
 from config import load_config
 
-def run_single_simulation(sim_i : int, n_count : int, universe_size : int, universe_retx : np.ndarray, universe_cols : list, train_duration : int, pca_rank : int):
-    '''
-        単一のシミュレーションを実行する関数
-        マルチプロセッシング用
-
-        sim_i : シミュレーションID
-        n_count : サンプルサイズ
-        universe_size : ユニバースサイズ
-        universe_retx : ユニバースのリターンデータ
-        universe_cols : ユニバースの銘柄名リスト
-        train_duration : 学習期間
-        pca_rank : PCAのランク
-    '''
+def run_single_simulation(sim_i: int, n_count: int, universe_size: int, universe_retx: np.ndarray, universe_cols: list, train_duration: int, pca_rank: int):
+    """単一のシミュレーションを実行する関数（マルチプロセッシング用）。
+    Args:
+        sim_i (int): シミュレーションID。
+        n_count (int): サンプルサイズ（ランダムサンプリングで抽出する銘柄数）。
+        universe_size (int): ユニバースサイズ（全銘柄数）。
+        universe_retx (np.ndarray): ユニバースのリターンデータ配列（形状: 時系列 × 銘柄）。
+        universe_cols (list): ユニバースの銘柄名リスト。
+        train_duration (int): 学習期間（バックテストで用いるトレーニング期間の長さ）。
+        pca_rank (int): PCAのランク（主成分の次元数）。
+    Returns:
+        pd.DataFrame: バックテスト結果を含むDataFrame。結果が存在しない場合は空のDataFrame。
+    """
 
     # ランダムサンプリング (非復元抽出)
-    selected_indices = np.random.choice(universe_size, n_count, replace=False)
+    rng = np.random.default_rng()
+    selected_indices = rng.choice(universe_size, n_count, replace=False)
     
     # データのサブセット作成
     sample_retx = universe_retx[:, selected_indices]
@@ -115,7 +116,7 @@ if __name__ == "__main__":
             for sim_i in range(num_sims)
         )
         
-        for sim_i, res in enumerate(tqdm(results_generator, desc=f"Simulations (N={n_count})")):
+        for _, res in enumerate(tqdm(results_generator, desc=f"Simulations (N={n_count})")):
             if not res.empty:
                 experiment_results.append(res)
 
