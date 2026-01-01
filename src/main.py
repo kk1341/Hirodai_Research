@@ -3,11 +3,51 @@ import sys
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 # 自作モジュールのインポート
 from data_handler import prepare_data
 from backtest_engine import run_backtest
 from config import load_config
+
+def run_single_simulation(sim_i: int, n_count: int, universe_size: int, universe_retx: np.ndarray, universe_cols: list, train_duration: int, pca_rank: int):
+    """単一のシミュレーションを実行する関数（マルチプロセッシング用）。
+    Args:
+        sim_i (int): シミュレーションID。
+        n_count (int): サンプルサイズ（ランダムサンプリングで抽出する銘柄数）。
+        universe_size (int): ユニバースサイズ（全銘柄数）。
+        universe_retx (np.ndarray): ユニバースのリターンデータ配列（形状: 時系列 × 銘柄）。
+        universe_cols (list): ユニバースの銘柄名リスト。
+        train_duration (int): 学習期間（バックテストで用いるトレーニング期間の長さ）。
+        pca_rank (int): PCAのランク（主成分の次元数）。
+    Returns:
+        pd.DataFrame: バックテスト結果を含むDataFrame。結果が存在しない場合は空のDataFrame。
+    """
+
+    # ランダムサンプリング (非復元抽出)
+    rng = np.random.default_rng()
+    selected_indices = rng.choice(universe_size, n_count, replace=False)
+    
+    # データのサブセット作成
+    sample_retx = universe_retx[:, selected_indices]
+    sample_cols = [universe_cols[i] for i in selected_indices]
+    
+    # バックテスト実行 (静音モード)
+    # 個別のファイル出力はしない (output_dir=None)
+    df_res = run_backtest(
+        sample_retx, 
+        train_duration, 
+        sample_cols, 
+        output_dir=None, 
+        pca_rank=pca_rank,
+        silent=True
+    )
+
+    if not df_res.empty:
+        df_res["N"] = n_count
+        df_res["SimID"] = sim_i
+    
+    return df_res
 
 # メイン実行ブロック
 if __name__ == "__main__":
@@ -70,32 +110,16 @@ if __name__ == "__main__":
             continue
             
         print(f"\nRunning simulations for N = {n_count}...")
+
+        results_generator = Parallel(n_jobs=-1, return_as="generator")(
+            delayed(run_single_simulation)(sim_i, n_count, universe_size, universe_retx, universe_cols, train_duration, pca_rank) 
+            for sim_i in range(num_sims)
+        )
         
-        for sim_i in tqdm(range(num_sims), desc=f"Sims (N={n_count})"):
-            # ランダムサンプリング (非復元抽出)
-            selected_indices = np.random.choice(universe_size, n_count, replace=False)
-            
-            # データのサブセット作成
-            sample_retx = universe_retx[:, selected_indices]
-            sample_cols = [universe_cols[i] for i in selected_indices]
-            
-            # バックテスト実行 (静音モード)
-            # 個別のファイル出力はしない (output_dir=None)
-            df_res = run_backtest(
-                sample_retx, 
-                train_duration, 
-                sample_cols, 
-                output_dir=None, 
-                pca_rank=pca_rank,
-                silent=True
-            )
-            
-            # 結果の収集 (Sim ID と N を付与)
-            if not df_res.empty:
-                df_res["N"] = n_count
-                df_res["SimID"] = sim_i
-                experiment_results.append(df_res)
-    
+        for _, res in enumerate(tqdm(results_generator, desc=f"Simulations (N={n_count})")):
+            if not res.empty:
+                experiment_results.append(res)
+
     # --- 結果の集計と保存 ---
     if experiment_results:
         print("\n実験完了。結果を保存中...")

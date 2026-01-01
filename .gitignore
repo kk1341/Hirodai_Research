@@ -19,6 +19,7 @@ venv/
 *.synctex.gz
 *.bbl
 *.blg
+Thesis/References/
 
 # Project Data
 data/
