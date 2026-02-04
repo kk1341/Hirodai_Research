@@ -32,12 +32,13 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
         "POET": [],
         "LinearShrinkage": [], # method.py実装の独自収縮
         "NonlinearShrinkage": [],
+        "EqualWeight": [],
     }
 
     if not silent:
         print(f"\n--- バックテスト実行 (T_train={train_duration} / N={N}) ---")
         print(f"総ステップ数: {num_test_steps} 回のテストを実行")
-        print("比較対象: Sample, MarketFactor, PCA, POET, LinearShrinkage, NonlinearShrinkage")
+        print("比較対象: Sample, MarketFactor, PCA, POET, LinearShrinkage, NonlinearShrinkage, EqualWeight")
 
     iterator = range(num_test_steps)
     if not silent:
@@ -81,7 +82,6 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
             
         # (5) Linear Shrinkage (独自実装)
         try:
-            # method.py に移動したためインポート元注意
             # method.linear_shrinkage_identity returns (S, Sigma_hat)
             _, sigma_sh = method.linear_shrinkage_identity(train_retx)
             estimators["LinearShrinkage"] = sigma_sh
@@ -93,6 +93,12 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
             estimators["NonlinearShrinkage"] = method.nonlinear_shrinkage_covariance(train_retx)
         except:
             estimators["NonlinearShrinkage"] = None
+
+        # (7) Equal Weight Portfolio
+        try:
+            estimators["EqualWeight"] = method.equal_weight_covariance(train_retx)
+        except:
+            estimators["EqualWeight"] = None
 
         # --- ウェイト計算とリターン計測 ---
         for name, sigma in estimators.items():
@@ -142,7 +148,7 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
         sharpe = calculate_sharpe_ratio(ret_arr)
         
         # 年率換算
-        ann_sharpe = sharpe * np.sqrt(252)
+        ann_sharpe = sharpe / np.sqrt(252)
 
         performance_records.append({
             "Method": name,
