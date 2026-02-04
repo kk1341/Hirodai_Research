@@ -148,7 +148,7 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
         sharpe = calculate_sharpe_ratio(ret_arr)
         
         # 年率換算
-        ann_sharpe = sharpe / np.sqrt(252)
+        ann_sharpe = sharpe * np.sqrt(252)
 
         performance_records.append({
             "Method": name,

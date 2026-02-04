@@ -1,11 +1,7 @@
 
-import os
-import sys
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from config import load_config
 
 # Set matplotlib style for publication quality
 plt.style.use('seaborn-v0_8-whitegrid')
@@ -29,10 +25,6 @@ def plot_n_vs_sharpe(summary_csv_path, output_dir):
     
     # Plotting
     plt.figure(figsize=(10, 6))
-    
-    # Define custom palette and markers for consistency
-    methods = df['Method'].unique()
-    markers = ['o', 's', '^', 'D', 'v', 'X']
     
     sns.lineplot(
         data=df, 
