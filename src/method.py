@@ -205,6 +205,20 @@ def linear_shrinkage_identity(X, assume_zero_mean=False):
 
 
 # --------------------------------------------------
+# 8. Equal Weight Portfolio (Identity Matrix)
+# --------------------------------------------------
+
+def equal_weight_covariance(R):
+    """
+    Returns an Identity matrix to produce Equal Weight Portfolio (1/N)
+    when used in MVP optimization (w = Sigma^-1 * 1).
+    """
+    N = R.shape[1]
+    return np.eye(N)
+
+
+
+# --------------------------------------------------
 # Example Usage
 # --------------------------------------------------
 

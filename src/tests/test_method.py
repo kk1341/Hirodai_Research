@@ -7,6 +7,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import method
+from portfolio_utils import calculate_mvp_weights
 
 class TestMethod(unittest.TestCase):
     def test_sample_covariance_shape(self):
@@ -14,6 +15,17 @@ class TestMethod(unittest.TestCase):
         R = np.random.randn(T, N)
         S = method.sample_covariance(R)
         self.assertEqual(S.shape, (N, N))
+
+    def test_equal_weight_covariance(self):
+        T, N = 50, 5
+        R = np.random.randn(T, N)
+        Sigma_ew = method.equal_weight_covariance(R)
+        # Check Identity
+        self.assertTrue(np.allclose(Sigma_ew, np.eye(N)))
+        w = calculate_mvp_weights(Sigma_ew)
+        # Should be exactly 1/N
+        expected_w = np.ones(N) / N
+        self.assertTrue(np.allclose(w, expected_w))
 
     def test_positive_definite(self):
         T, N = 50, 5
