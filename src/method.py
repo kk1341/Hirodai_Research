@@ -65,6 +65,7 @@ def factor_covariance_known(R, F):
 
     B = np.linalg.lstsq(F, R, rcond=None)[0]  # K x N
     Sigma_f = np.cov(F, rowvar=False)
+    Sigma_f = np.atleast_2d(Sigma_f)
     U = R - F @ B
     Sigma_u = np.diag(np.var(U, axis=0))
     return B.T @ Sigma_f @ B + Sigma_u

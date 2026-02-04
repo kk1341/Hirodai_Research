@@ -10,7 +10,7 @@ from data_handler import prepare_data
 from backtest_engine import run_backtest
 from config import load_config
 
-def run_single_simulation(sim_i: int, n_count: int, universe_size: int, universe_retx: np.ndarray, universe_cols: list, train_duration: int, pca_rank: int):
+def run_single_simulation(sim_i: int, n_count: int, universe_size: int, universe_retx: np.ndarray, universe_cols: list, market_factor: np.ndarray, train_duration: int, pca_rank: int):
     """単一のシミュレーションを実行する関数（マルチプロセッシング用）。
     Args:
         sim_i (int): シミュレーションID。
@@ -38,6 +38,7 @@ def run_single_simulation(sim_i: int, n_count: int, universe_size: int, universe
         sample_retx, 
         train_duration, 
         sample_cols, 
+        market_factor, # Pass the full market factor (simulation will handle time slicing)
         output_dir=None, 
         pca_rank=pca_rank,
         silent=True
@@ -91,7 +92,7 @@ if __name__ == "__main__":
 
     # 4. データ準備とクレンジング (ユニバース全体を読み込み)
     print("ユニバースデータの読み込み中...")
-    universe_retx, universe_cols = prepare_data(
+    universe_retx, universe_cols, universe_market_factor = prepare_data(
         input_path, stock_files, start_date, end_date, method=INTERPOLATION_METHOD
     )
     
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         print(f"\nRunning simulations for N = {n_count}...")
 
         results_generator = Parallel(n_jobs=-1, return_as="generator")(
-            delayed(run_single_simulation)(sim_i, n_count, universe_size, universe_retx, universe_cols, train_duration, pca_rank) 
+            delayed(run_single_simulation)(sim_i, n_count, universe_size, universe_retx, universe_cols, universe_market_factor, train_duration, pca_rank) 
             for sim_i in range(num_sims)
         )
         

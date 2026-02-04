@@ -5,7 +5,7 @@ from tqdm import tqdm
 import method
 from portfolio_utils import calculate_mvp_weights, calculate_sharpe_ratio
 
-def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank=3, silent=False):
+def run_backtest(retx_data, train_duration, retx_cols, market_factor=None, output_dir=None, pca_rank=3, silent=False):
     """
     ロール・オーバー・ウィンドウによるバックテストを実行し、シャープ・レシオを比較する。
     
@@ -27,7 +27,7 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
     # 各手法のリターンを格納する辞書
     returns_storage = {
         "Sample": [],
-        "MarketFactor": [], # 全銘柄平均をファクターとする
+        "MarketFactor": [], # 指定されたマーケットファクターを使用
         "PCA": [],
         "POET": [],
         "LinearShrinkage": [], # method.py実装の独自収縮
@@ -63,7 +63,13 @@ def run_backtest(retx_data, train_duration, retx_cols, output_dir=None, pca_rank
 
         # (2) Market Factor (Known Factor Proxy)
         try:
-            F_market = np.mean(train_retx, axis=1, keepdims=True)
+             # 指定されたマーケットファクターを使用
+            if market_factor is not None:
+                F_market = market_factor[i : i + train_duration]
+            else:
+                 # Fallback: Mean of universe (if market_factor not provided)
+                F_market = np.mean(train_retx, axis=1, keepdims=True)
+                
             estimators["MarketFactor"] = method.factor_covariance_known(train_retx, F_market)
         except:
             estimators["MarketFactor"] = None
