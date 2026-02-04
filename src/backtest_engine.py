@@ -27,7 +27,7 @@ def run_backtest(retx_data, train_duration, retx_cols, market_factor=None, outpu
     # 各手法のリターンを格納する辞書
     returns_storage = {
         "Sample": [],
-        "MarketFactor": [], # 全銘柄平均をファクターとする
+        "MarketFactor": [], # 指定されたマーケットファクターを使用
         "PCA": [],
         "POET": [],
         "LinearShrinkage": [], # method.py実装の独自収縮
@@ -63,7 +63,7 @@ def run_backtest(retx_data, train_duration, retx_cols, market_factor=None, outpu
 
         # (2) Market Factor (Known Factor Proxy)
         try:
-             # Use provided market factor if available
+             # 指定されたマーケットファクターを使用
             if market_factor is not None:
                 F_market = market_factor[i : i + train_duration]
             else:
